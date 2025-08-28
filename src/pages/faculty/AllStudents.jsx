@@ -110,6 +110,39 @@ function StudentRow({ student }) {
                 <div><strong>Passing Year:</strong> {student.passingYear}</div>
                 <div><strong>Skills:</strong> {student.skills?.join(', ') || 'N/A'}</div>
                 <div><strong>Interests:</strong> {student.interests?.join(', ') || 'N/A'}</div>
+                <div className="col-span-2">
+                  <strong>Profile Links:</strong>
+                  <div className="flex flex-wrap gap-4 mt-1">
+                    {student.githubLink && student.githubLink !== 'NA' ? (
+                      <a href={student.githubLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                        GitHub
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">GitHub: N/A</span>
+                    )}
+                    {student.linkedinLink && student.linkedinLink !== 'NA' ? (
+                      <a href={student.linkedinLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                        LinkedIn
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">LinkedIn: N/A</span>
+                    )}
+                    {student.codechefLink && student.codechefLink !== 'NA' ? (
+                      <a href={student.codechefLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                        CodeChef
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">CodeChef: N/A</span>
+                    )}
+                    {student.leetcodeLink && student.leetcodeLink !== 'NA' ? (
+                      <a href={student.leetcodeLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 underline">
+                        LeetCode
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">LeetCode: N/A</span>
+                    )}
+                  </div>
+                </div>
                 <div className="col-span-2"><strong>Projects:</strong> {student.previousProjects || 'N/A'}</div>
                 {student.currentlyPursuingInternship === 'Yes' && (
                   <div className="col-span-2"><strong>Internship:</strong> {student.internshipDetails.companyName} ({student.internshipDetails.duration}, {student.internshipDetails.stipend})</div>
@@ -250,6 +283,10 @@ function AllStudents() {
       'Interests',
       'Passing Year',
       'Projects',
+      'GitHub Link',
+      'LinkedIn Link',
+      'CodeChef Link',
+      'LeetCode Link',
       'Applications'
     ];
 
@@ -279,6 +316,10 @@ function AllStudents() {
         (student.interests || []).join(', '),
         student.passingYear ?? '',
         student.previousProjects || '',
+        student.githubLink && student.githubLink !== 'NA' ? student.githubLink : '',
+        student.linkedinLink && student.linkedinLink !== 'NA' ? student.linkedinLink : '',
+        student.codechefLink && student.codechefLink !== 'NA' ? student.codechefLink : '',
+        student.leetcodeLink && student.leetcodeLink !== 'NA' ? student.leetcodeLink : '',
         applicationsText
       ];
     });

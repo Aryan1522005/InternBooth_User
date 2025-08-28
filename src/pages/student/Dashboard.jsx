@@ -591,7 +591,7 @@ function Dashboard() {
                                 `Round ${application.currentRound || 1} Test Submitted - Pending Review` :
                                !application.internship && !application.internshipDetails ? 'Internship Details Not Available' :
                                application.status === 'pending' ? 
-                                `Test Date: ${new Date(application.internship?.testDate || application.internshipDetails?.testDate || new Date()).toLocaleDateString()}` :
+                                `Test Date: ${new Date(application.internship?.testDate || application.internshipDetails?.testDate || new Date()).toLocaleDateString('en-GB')} at ${new Date(application.internship?.testDate || application.internshipDetails?.testDate || new Date()).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}` :
                                application.status === 'selected' ? 'Congratulations! You are Selected' :
                                application.status === 'test_approved' ? 
                                  `Round 2 (Quiz) Passed - Congratulations!` :
@@ -772,7 +772,7 @@ function Dashboard() {
                   <div key={notification.id} className="border-b pb-4 last:border-b-0 last:pb-0">
                     <p>{notification.message}</p>
                     <span className="text-sm text-gray-500">
-                      {notification.createdAt?.toDate().toLocaleDateString()}
+                      {notification.createdAt?.toDate().toLocaleDateString('en-GB')}
                     </span>
                   </div>
                 ))

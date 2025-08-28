@@ -26,7 +26,10 @@ function Home() {
   const [error, setError] = useState('');
   const { currentUser, getUserData } = useAuth();
   const [userInterests, setUserInterests] = useState([]);
+  const [userDepartment, setUserDepartment] = useState('');
   const [filterByInterests, setFilterByInterests] = useState(true);
+  const [filterByDepartment, setFilterByDepartment] = useState(true);
+  const [showAllInternships, setShowAllInternships] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [appliedInternshipIds, setAppliedInternshipIds] = useState([]);
@@ -45,7 +48,9 @@ function Home() {
             
             // Check both interestedDomains and interests fields
             const userDomains = userData?.interestedDomains || userData?.interests || [];
+            const department = userData?.department || '';
             console.log('Extracted user domains:', userDomains);
+            console.log('User department:', department);
             
             if (userDomains.length > 0) {
               setUserInterests(userDomains);
@@ -54,6 +59,13 @@ function Home() {
             } else {
               console.log('No user interests found');
               setFilterByInterests(false);
+            }
+            
+            if (department) {
+              setUserDepartment(department);
+              setFilterByDepartment(true);
+            } else {
+              setFilterByDepartment(false);
             }
           } catch (userError) {
             console.error('Error fetching user data:', userError);
@@ -148,21 +160,67 @@ function Home() {
     fetchAppliedInternships();
   }, [currentUser]);
 
-  // Filter internships based on search term, user interests, and applied internships
+  // Department mapping for internship filtering
+  const DEPARTMENT_DOMAINS = {
+    'Computer Science': [
+      'Algorithms & Data Structures', 'Software Development', 'Database Systems',
+      'Operating Systems', 'Computer Networks', 'Cybersecurity', 'Cloud Computing',
+      'Artificial Intelligence', 'Machine Learning', 'Data Science',
+      'Computer Graphics & AR/VR', 'Distributed Systems', 'Theory of Computation'
+    ],
+    'Information Technology': [
+      'Web Development', 'Mobile App Development', 'Software Engineering',
+      'Information Security', 'Cloud & DevOps', 'Big Data Analytics',
+      'Database Management', 'IT Infrastructure & Networking',
+      'E-commerce & ERP Systems', 'Human-Computer Interaction'
+    ],
+    'Electrical Engineering': [
+      'Power Systems', 'Electrical Machines', 'Control Systems',
+      'Power Electronics & Drives', 'Renewable Energy Systems',
+      'High Voltage Engineering', 'Smart Grid & Energy Management',
+      'Microgrids & Distributed Generation', 'Instrumentation & Measurement', 'Electromagnetics'
+    ],
+    'Electronics and Telecommunication': [
+      'VLSI Design', 'Embedded Systems', 'Digital Signal Processing (DSP)',
+      'Control Systems', 'Communication Systems (Wireless, Optical, Satellite)',
+      'Antennas & Microwave Engineering', 'Internet of Things (IoT)',
+      'Robotics & Automation', 'Nanoelectronics', 'Power Electronics'
+    ],
+    'Mechanical Engineering': [
+      'Design Engineering', 'Thermal Engineering', 'Manufacturing & Production',
+      'Mechatronics', 'CAD/CAM & Robotics', 'Fluid Mechanics & Hydraulics',
+      'Automotive Engineering', 'Aerospace Engineering',
+      'Energy Systems & Power Plants', 'Industrial Engineering'
+    ],
+    'Civil Engineering': [
+      'Structural Engineering', 'Geotechnical Engineering', 'Transportation Engineering',
+      'Environmental Engineering', 'Construction Management', 'Water Resources Engineering',
+      'Surveying & Geoinformatics', 'Coastal & Offshore Engineering',
+      'Urban Planning & Smart Cities', 'Earthquake Engineering'
+    ],
+    'Artificial Intelligence': [
+      'Machine Learning', 'Deep Learning', 'Natural Language Processing (NLP)',
+      'Computer Vision', 'Reinforcement Learning', 'Neural Networks',
+      'AI in Robotics', 'Explainable AI', 'AI in Healthcare / Finance / IoT',
+      'Data Mining & Knowledge Discovery'
+    ]
+  };
+
+  // Filter internships based on search term, department, and deadline
   const filteredInternships = internships.filter(internship => {
-    // Hide internships the student has already applied to
-    if (appliedInternshipIds.includes(internship.id)) {
+    // Hide internships the student has already applied to (only when viewing department-specific)
+    if (!showAllInternships && appliedInternshipIds.includes(internship.id)) {
       return false;
     }
-    // Debug log for each internship being processed
-    console.log('Filtering internship:', {
-      id: internship.id,
-      title: internship.title,
-      domains: internship.domains,
-      searchTerm: searchTerm,
-      filterByInterests: filterByInterests,
-      userInterests: userInterests
-    });
+
+    // Hide internships where application deadline has passed
+    if (internship.firstRoundDate) {
+      const deadline = new Date(internship.firstRoundDate);
+      const now = new Date();
+      if (deadline < now) {
+        return false;
+      }
+    }
 
     // Search term matching
     const matchesSearch = !searchTerm || // if no search term, show all
@@ -172,44 +230,24 @@ function Home() {
         domain?.toLowerCase().includes(searchTerm.toLowerCase())
       );
 
-    // If not filtering by interests, only apply search filter
-    if (!filterByInterests) {
-      console.log(`Internship ${internship.id} search match:`, matchesSearch);
+    // If showing all internships, only apply search filter
+    if (showAllInternships) {
       return matchesSearch;
     }
 
-    // If no user interests, show all that match search
-    if (!userInterests || userInterests.length === 0) {
-      console.log(`No user interests, showing internship ${internship.id} based on search:`, matchesSearch);
-      return matchesSearch;
+    // Department-based filtering ONLY - no domain or interest filtering
+    let matchesDepartment = true;
+    if (filterByDepartment && userDepartment) {
+      // Use the departments field exclusively
+      if (internship.departments && internship.departments.length > 0) {
+        matchesDepartment = internship.departments.includes(userDepartment);
+      } else {
+        // If no departments field, don't show the internship in department filter
+        matchesDepartment = false;
+      }
     }
 
-    // If internship has no domains but matches search, show it
-    if (!internship.domains || internship.domains.length === 0) {
-      console.log(`Internship ${internship.id} has no domains, showing based on search:`, matchesSearch);
-      return matchesSearch;
-    }
-
-    // Check if any user interest matches any of the internship domains
-    const hasMatchingInterest = userInterests.some(interest => {
-      const userInterest = interest?.toLowerCase().trim() || '';
-      return internship.domains.some(domain => {
-        const internshipDomain = domain?.toLowerCase().trim() || '';
-        const matches = internshipDomain.includes(userInterest) || userInterest.includes(internshipDomain);
-        console.log(`Comparing domain "${internshipDomain}" with interest "${userInterest}":`, matches);
-        return matches;
-      });
-    });
-
-    const shouldShow = matchesSearch && (!filterByInterests || hasMatchingInterest);
-    console.log(`Final decision for internship ${internship.id}:`, {
-      matchesSearch,
-      hasMatchingInterest,
-      filterByInterests,
-      shouldShow
-    });
-
-    return shouldShow;
+    return matchesSearch && matchesDepartment;
   });
 
   // Log final filtered results
@@ -235,27 +273,46 @@ function Home() {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
             />
-            {/* <select
-              value={selectedDomain}
-              onChange={(e) => setSelectedDomain(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">All Domains</option>
-              <option value="Web Development">Web Development</option>
-              <option value="Mobile Development">Mobile Development</option>
-              <option value="Data Science">Data Science</option>
-              <option value="Machine Learning">Machine Learning</option>
-              <option value="UI/UX Design">UI/UX Design</option>
-            </select> */}
+            
+            {/* Department Toggle */}
+            {userDepartment && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">
+                    {showAllInternships ? 'All Internships' : `${userDepartment} Internships`}
+                  </span>
+                  <button
+                    onClick={() => setShowAllInternships(!showAllInternships)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      showAllInternships 
+                        ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
+                        : 'bg-primary text-white hover:bg-primary-dark'
+                    }`}
+                  >
+                    {showAllInternships ? 'Show My Department' : 'Show All'}
+                  </button>
+                </div>
+                {showAllInternships && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <p className="text-sm text-yellow-800">
+                      <strong>Note:</strong> You can view all internships but can only apply to those where your department ({userDepartment}) is listed as a target department. 
+                      Look for "Your domains match!" badges on internships that align with your interests.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           
         </div>
       <div className="max-w-7xl   bg-white">
       <p className="text-text text-[20px] px-8">
-            {filterByInterests && userInterests.length > 0 
-              ? `Internship Opportunities Found For You (${filteredInternships.length} Found)`
-              : `All Internships (${filteredInternships.length} Found)`}
+            {showAllInternships 
+              ? `All Internships (${filteredInternships.length} Found)`
+              : userDepartment 
+                ? `${userDepartment} Internships (${filteredInternships.length} Found)`
+                : `Internships (${filteredInternships.length} Found)`}
           </p>
         {/* Error Message */}
         {error && (
@@ -270,26 +327,67 @@ function Home() {
             <p>Loading internships...</p>
           </div>
         ) : (
-          <div className=" p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            
-            {filteredInternships.map(internship => (
-              <InternshipCard key={internship.id} internship={internship} />
-            ))}
-          </div>
-        )}
-
-        {filteredInternships.length === 0 && !loading && (
-          <div className="text-center py-8 ">
-            <p className="text-gray-600">No internships found matching your criteria.</p>
-            {filterByInterests && (
-              <button
-                onClick={() => setFilterByInterests(false)}
-                className="text-primary hover:underline mt-2"
-              >
-                Show all internships
-              </button>
+          <>
+            {filteredInternships.length === 0 && !loading && (
+              <div className="text-center py-8 ">
+                <p className="text-gray-600">No internships found matching your criteria.</p>
+                {!showAllInternships && userDepartment && (
+                  <button
+                    onClick={() => setShowAllInternships(true)}
+                    className="text-primary hover:underline mt-2"
+                  >
+                    Show all internships
+                  </button>
+                )}
+              </div>
             )}
-          </div>
+            <div className=" p-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredInternships.map(internship => {
+                // Check if student can apply to this internship (department-based only)
+                const canApply = !showAllInternships || (() => {
+                  if (!userDepartment) return true;
+                  
+                  // Use the departments field exclusively
+                  if (internship.departments && internship.departments.length > 0) {
+                    return internship.departments.includes(userDepartment);
+                  }
+                  
+                  // If no departments field, don't allow application
+                  return false;
+                })();
+                
+                // Check if user's interests/domains match for informational purposes
+                const hasMatchingDomains = (() => {
+                  if (!userInterests || userInterests.length === 0 || !internship.domains || internship.domains.length === 0) {
+                    return false;
+                  }
+                  
+                  return userInterests.some(interest => {
+                    const userInterest = interest?.toLowerCase().trim() || '';
+                    return internship.domains.some(domain => {
+                      const internshipDomain = domain?.toLowerCase().trim() || '';
+                      return internshipDomain.includes(userInterest) || userInterest.includes(internshipDomain);
+                    });
+                  });
+                })();
+                
+                return (
+                  <div key={internship.id} className="relative">
+                    <InternshipCard 
+                      internship={internship} 
+                      canApply={canApply}
+                      showAllMode={showAllInternships}
+                    />
+                    {hasMatchingDomains && (
+                      <div className="absolute top-2 right-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">
+                        Your domains match!
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </div>

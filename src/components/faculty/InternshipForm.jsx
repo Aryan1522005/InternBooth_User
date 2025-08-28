@@ -18,7 +18,9 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
     responsibilities: '',
     skills: [],
     firstRoundDate: '',
+    firstRoundTime: '',
     testDate: '',
+    testTime: '',
     postedDate: new Date().toISOString().split('T')[0],
     location: '',
     startDate: '',
@@ -200,7 +202,9 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
           : (initialData.responsibilities || ''),
         skills: Array.isArray(initialData.skills) ? initialData.skills : [],
         firstRoundDate: initialData.firstRoundDate ? new Date(initialData.firstRoundDate).toISOString().split('T')[0] : '',
+        firstRoundTime: initialData.firstRoundDate ? new Date(initialData.firstRoundDate).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' }) : '',
         testDate: initialData.testDate ? new Date(initialData.testDate).toISOString().split('T')[0] : '',
+        testTime: initialData.testDate ? new Date(initialData.testDate).toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit' }) : '',
         postedDate: initialData.postedDate ? new Date(initialData.postedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
         location: initialData.location || '',
         startDate: initialData.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : '',
@@ -425,8 +429,10 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
         'jobRole', 
         'description', 
         'responsibilities', 
-        'firstRoundDate', 
-        'testDate', 
+        'firstRoundDate',
+        'firstRoundTime', 
+        'testDate',
+        'testTime', 
         'location', 
         'startDate', 
         'stipend',
@@ -478,13 +484,13 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
       }
       // No validation needed for 'none' eligibility type
 
-      // Get dates for reference only (validation removed as requested)
-      const firstRoundDate = new Date(internshipForm.firstRoundDate);
-      const testDate = new Date(internshipForm.testDate);
+      // Combine date and time for validation
+      const firstRoundDateTime = new Date(`${internshipForm.firstRoundDate}T${internshipForm.firstRoundTime}`);
+      const testDateTime = new Date(`${internshipForm.testDate}T${internshipForm.testTime}`);
       
       // Only validate that test date is not before the application deadline
-      if (testDate < firstRoundDate) {
-        setFormError('Test date cannot be before the application deadline');
+      if (testDateTime < firstRoundDateTime) {
+        setFormError('Test date and time cannot be before the application deadline');
         setSubmitting(false);
         return;
       }
@@ -511,8 +517,8 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
         description: internshipForm.description.trim(),
         responsibilities: internshipForm.responsibilities.split('\n').filter(item => item.trim() !== ''),
         skills: internshipForm.skills,
-        firstRoundDate: new Date(internshipForm.firstRoundDate).toISOString(),
-        testDate: new Date(internshipForm.testDate).toISOString(),
+        firstRoundDate: new Date(`${internshipForm.firstRoundDate}T${internshipForm.firstRoundTime}`).toISOString(),
+        testDate: new Date(`${internshipForm.testDate}T${internshipForm.testTime}`).toISOString(),
         facultyId: currentUser.uid,
         facultyName: internshipForm.facultyName,
         facultyDesignation: internshipForm.facultyDesignation,
@@ -561,7 +567,9 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
           responsibilities: '',
           skills: [],
           firstRoundDate: '',
+          firstRoundTime: '',
           testDate: '',
+          testTime: '',
           postedDate: new Date().toISOString().split('T')[0],
           location: '',
           startDate: '',
@@ -1059,48 +1067,184 @@ function InternshipForm({ onSuccess, onCancel, initialData, editMode }) {
         </div>
         
         <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="firstRoundDate">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
             Application Deadline*
           </label>
-          <div className="relative">
-            <input
-              id="firstRoundDate"
-              name="firstRoundDate"
-              type="date"
-              className="input-field cursor-pointer"
-              value={internshipForm.firstRoundDate}
-              onChange={handleInputChange}
-              min={new Date().toISOString().split('T')[0]}
-              onClick={(e) => {
-                // Force the date picker to open when clicking anywhere in the field
-                e.target.showPicker();
-              }}
-              required
-            />
-           
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-600 text-xs font-medium mb-1" htmlFor="firstRoundDate">
+                Date
+              </label>
+              <input
+                id="firstRoundDate"
+                name="firstRoundDate"
+                type="date"
+                className="input-field cursor-pointer"
+                value={internshipForm.firstRoundDate}
+                onChange={handleInputChange}
+                min={new Date().toISOString().split('T')[0]}
+                onClick={(e) => {
+                  e.target.showPicker();
+                }}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-600 text-xs font-medium mb-1" htmlFor="firstRoundTime">
+                Time (12-hour format)
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  name="firstRoundHour"
+                  className="input-field text-sm"
+                  value={internshipForm.firstRoundTime ? new Date(`2000-01-01T${internshipForm.firstRoundTime}`).getHours() % 12 || 12 : ''}
+                  onChange={(e) => {
+                    const hour = parseInt(e.target.value);
+                    const currentTime = internshipForm.firstRoundTime || '12:00';
+                    const [, minute] = currentTime.split(':');
+                    const currentHour24 = internshipForm.firstRoundTime ? new Date(`2000-01-01T${internshipForm.firstRoundTime}`).getHours() : 0;
+                    const isPM = currentHour24 >= 12;
+                    const newHour24 = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
+                    const newTime = `${newHour24.toString().padStart(2, '0')}:${minute || '00'}`;
+                    setInternshipForm(prev => ({ ...prev, firstRoundTime: newTime }));
+                  }}
+                  required
+                >
+                  <option value="">Hour</option>
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+                <select
+                  name="firstRoundMinute"
+                  className="input-field text-sm"
+                  value={internshipForm.firstRoundTime ? internshipForm.firstRoundTime.split(':')[1] : ''}
+                  onChange={(e) => {
+                    const minute = e.target.value;
+                    const currentTime = internshipForm.firstRoundTime || '12:00';
+                    const currentHour24 = internshipForm.firstRoundTime ? new Date(`2000-01-01T${internshipForm.firstRoundTime}`).getHours() : 12;
+                    const newTime = `${currentHour24.toString().padStart(2, '0')}:${minute}`;
+                    setInternshipForm(prev => ({ ...prev, firstRoundTime: newTime }));
+                  }}
+                  required
+                >
+                  <option value="">Min</option>
+                  {[...Array(60)].map((_, i) => (
+                    <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                  ))}
+                </select>
+                <select
+                  name="firstRoundPeriod"
+                  className="input-field text-sm"
+                  value={internshipForm.firstRoundTime ? (new Date(`2000-01-01T${internshipForm.firstRoundTime}`).getHours() >= 12 ? 'PM' : 'AM') : ''}
+                  onChange={(e) => {
+                    const period = e.target.value;
+                    const currentTime = internshipForm.firstRoundTime || '12:00';
+                    const [hourStr, minute] = currentTime.split(':');
+                    const currentHour12 = new Date(`2000-01-01T${currentTime}`).getHours() % 12 || 12;
+                    const newHour24 = period === 'PM' ? (currentHour12 === 12 ? 12 : currentHour12 + 12) : (currentHour12 === 12 ? 0 : currentHour12);
+                    const newTime = `${newHour24.toString().padStart(2, '0')}:${minute}`;
+                    setInternshipForm(prev => ({ ...prev, firstRoundTime: newTime }));
+                  }}
+                  required
+                >
+                  <option value="">AM/PM</option>
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="mb-6">
-          <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="testDate">
+          <label className="block text-gray-700 text-sm font-bold mb-2">
             Test Date*
           </label>
-          <div className="relative">
-            <input
-              id="testDate"
-              name="testDate"
-              type="date"
-              className="input-field cursor-pointer"
-              value={internshipForm.testDate}
-              onChange={handleInputChange}
-              min={internshipForm.firstRoundDate || new Date().toISOString().split('T')[0]}
-              onClick={(e) => {
-                // Force the date picker to open when clicking anywhere in the field
-                e.target.showPicker();
-              }}
-              required
-            />
-            
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-gray-600 text-xs font-medium mb-1" htmlFor="testDate">
+                Date
+              </label>
+              <input
+                id="testDate"
+                name="testDate"
+                type="date"
+                className="input-field cursor-pointer"
+                value={internshipForm.testDate}
+                onChange={handleInputChange}
+                min={internshipForm.firstRoundDate || new Date().toISOString().split('T')[0]}
+                onClick={(e) => {
+                  e.target.showPicker();
+                }}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-gray-600 text-xs font-medium mb-1" htmlFor="testTime">
+                Time (12-hour format)
+              </label>
+              <div className="grid grid-cols-3 gap-2">
+                <select
+                  name="testHour"
+                  className="input-field text-sm"
+                  value={internshipForm.testTime ? new Date(`2000-01-01T${internshipForm.testTime}`).getHours() % 12 || 12 : ''}
+                  onChange={(e) => {
+                    const hour = parseInt(e.target.value);
+                    const currentTime = internshipForm.testTime || '12:00';
+                    const [, minute] = currentTime.split(':');
+                    const currentHour24 = internshipForm.testTime ? new Date(`2000-01-01T${internshipForm.testTime}`).getHours() : 0;
+                    const isPM = currentHour24 >= 12;
+                    const newHour24 = isPM ? (hour === 12 ? 12 : hour + 12) : (hour === 12 ? 0 : hour);
+                    const newTime = `${newHour24.toString().padStart(2, '0')}:${minute || '00'}`;
+                    setInternshipForm(prev => ({ ...prev, testTime: newTime }));
+                  }}
+                  required
+                >
+                  <option value="">Hour</option>
+                  {[...Array(12)].map((_, i) => (
+                    <option key={i + 1} value={i + 1}>{i + 1}</option>
+                  ))}
+                </select>
+                <select
+                  name="testMinute"
+                  className="input-field text-sm"
+                  value={internshipForm.testTime ? internshipForm.testTime.split(':')[1] : ''}
+                  onChange={(e) => {
+                    const minute = e.target.value;
+                    const currentTime = internshipForm.testTime || '12:00';
+                    const currentHour24 = internshipForm.testTime ? new Date(`2000-01-01T${internshipForm.testTime}`).getHours() : 12;
+                    const newTime = `${currentHour24.toString().padStart(2, '0')}:${minute}`;
+                    setInternshipForm(prev => ({ ...prev, testTime: newTime }));
+                  }}
+                  required
+                >
+                  <option value="">Min</option>
+                  {[...Array(60)].map((_, i) => (
+                    <option key={i} value={i.toString().padStart(2, '0')}>{i.toString().padStart(2, '0')}</option>
+                  ))}
+                </select>
+                <select
+                  name="testPeriod"
+                  className="input-field text-sm"
+                  value={internshipForm.testTime ? (new Date(`2000-01-01T${internshipForm.testTime}`).getHours() >= 12 ? 'PM' : 'AM') : ''}
+                  onChange={(e) => {
+                    const period = e.target.value;
+                    const currentTime = internshipForm.testTime || '12:00';
+                    const [hourStr, minute] = currentTime.split(':');
+                    const currentHour12 = new Date(`2000-01-01T${currentTime}`).getHours() % 12 || 12;
+                    const newHour24 = period === 'PM' ? (currentHour12 === 12 ? 12 : currentHour12 + 12) : (currentHour12 === 12 ? 0 : currentHour12);
+                    const newTime = `${newHour24.toString().padStart(2, '0')}:${minute}`;
+                    setInternshipForm(prev => ({ ...prev, testTime: newTime }));
+                  }}
+                  required
+                >
+                  <option value="">AM/PM</option>
+                  <option value="AM">AM</option>
+                  <option value="PM">PM</option>
+                </select>
+              </div>
+            </div>
           </div>
           <p className="text-sm text-gray-500 mt-1">Test will be conducted on or after the application deadline</p>
         </div>

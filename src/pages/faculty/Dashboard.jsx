@@ -309,20 +309,24 @@ function Dashboard() {
                           ))}
                         </div>
                         <span className="text-gray-500 text-xs">
-                          Posted on {new Date(internship.postedDate).toLocaleDateString()}
+                          Posted on {new Date(internship.postedDate).toLocaleDateString('en-GB')}
                         </span>
                       </div>
 
                       <p className="text-gray-700 mb-4 line-clamp-3">{internship.description}</p>
 
                       <div className="flex justify-between items-center">
-                        <div className="text-sm text-gray-500">
-                          <span className="mr-4">
-                            Deadline: {new Date(internship.firstRoundDate).toLocaleDateString()}
-                          </span>
-                          <span>
-                            Test Date: {new Date(internship.testDate).toLocaleDateString()}
-                          </span>
+                        <div className="text-sm flex flex-col gap-2">
+                          <div className="bg-red-100 border border-red-300 rounded-lg p-2">
+                            <span className="text-red-800 font-medium">
+                              Deadline: {new Date(internship.firstRoundDate).toLocaleDateString('en-GB')} at {new Date(internship.firstRoundDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </span>
+                          </div>
+                          <div className="bg-red-100 border border-red-300 rounded-lg p-2">
+                            <span className="text-red-800 font-medium">
+                              Test Date: {new Date(internship.testDate).toLocaleDateString('en-GB')} at {new Date(internship.testDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
+                            </span>
+                          </div>
                         </div>
                         <Link
                           to={`/faculty/internships/${internship.id}`}

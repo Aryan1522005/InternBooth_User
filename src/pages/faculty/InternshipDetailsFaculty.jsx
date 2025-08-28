@@ -76,10 +76,10 @@ function InternshipDetailsFaculty() {
         <p className="text-gray-700 mb-2"><b>Description:</b> {internship.description}</p>
         <p className="text-gray-700 mb-2"><b>Responsibilities:</b> {Array.isArray(internship.responsibilities) ? internship.responsibilities.join(', ') : internship.responsibilities}</p>
         <p className="text-gray-700 mb-2"><b>Skills:</b> {Array.isArray(internship.skills) ? internship.skills.join(', ') : ''}</p>
-        <p className="text-gray-700 mb-2"><b>First Round Date:</b> {internship.firstRoundDate ? new Date(internship.firstRoundDate).toLocaleDateString() : ''}</p>
-        <p className="text-gray-700 mb-2"><b>Test Date:</b> {internship.testDate ? new Date(internship.testDate).toLocaleDateString() : ''}</p>
+        <p className="text-gray-700 mb-2"><b>First Round Date:</b> {internship.firstRoundDate ? new Date(internship.firstRoundDate).toLocaleDateString('en-GB') + ' at ' + new Date(internship.firstRoundDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : ''}</p>
+        <p className="text-gray-700 mb-2"><b>Test Date:</b> {internship.testDate ? new Date(internship.testDate).toLocaleDateString('en-GB') + ' at ' + new Date(internship.testDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }) : ''}</p>
         <p className="text-gray-700 mb-2"><b>Location:</b> {internship.location}</p>
-        <p className="text-gray-700 mb-2"><b>Start Date:</b> {internship.startDate ? new Date(internship.startDate).toLocaleDateString() : ''}</p>
+        <p className="text-gray-700 mb-2"><b>Start Date:</b> {internship.startDate ? new Date(internship.startDate).toLocaleDateString('en-GB') : ''}</p>
         <p className="text-gray-700 mb-2"><b>Stipend:</b> {internship.stipend}</p>
       </div>
     </div>

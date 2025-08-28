@@ -125,7 +125,7 @@ function FacultyHome() {
                 <p className="text-gray-600 text-sm mb-2">{internship.companyName}</p>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">
-                    Posted on {new Date(internship.postedDate).toLocaleDateString()}
+                    Posted on {new Date(internship.postedDate).toLocaleDateString('en-GB')}
                   </span>
                   <Link
                     to={`/faculty/internships/${internship.id}`}

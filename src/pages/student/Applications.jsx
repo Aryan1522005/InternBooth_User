@@ -238,7 +238,7 @@ function Applications() {
                     </div>
                   )}
                   <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <span>Applied on: {application.appliedAt?.toDate ? new Date(application.appliedAt.toDate()).toLocaleDateString() : 'Date not available'}</span>
+                    <span>Applied on: {application.appliedAt?.toDate ? new Date(application.appliedAt.toDate()).toLocaleDateString('en-GB') : 'Date not available'}</span>
                     {application.currentRound && (
                       <span>• Round {application.currentRound}</span>
                     )}
