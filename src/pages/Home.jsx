@@ -30,6 +30,7 @@ function Home() {
   const [filterByInterests, setFilterByInterests] = useState(true);
   const [filterByDepartment, setFilterByDepartment] = useState(true);
   const [showAllInternships, setShowAllInternships] = useState(false);
+  const [showExpiredInternships, setShowExpiredInternships] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDomain, setSelectedDomain] = useState('');
   const [appliedInternshipIds, setAppliedInternshipIds] = useState([]);
@@ -213,8 +214,8 @@ function Home() {
       return false;
     }
 
-    // Hide internships where application deadline has passed
-    if (internship.firstRoundDate) {
+    // Hide internships where application deadline has passed (unless showing expired)
+    if (!showExpiredInternships && internship.firstRoundDate) {
       const deadline = new Date(internship.firstRoundDate);
       const now = new Date();
       if (deadline < now) {
@@ -283,13 +284,13 @@ function Home() {
                   </span>
                   <button
                     onClick={() => setShowAllInternships(!showAllInternships)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors w-32 ${
                       showAllInternships 
                         ? 'bg-gray-200 text-gray-700 hover:bg-gray-300' 
                         : 'bg-primary text-white hover:bg-primary-dark'
                     }`}
                   >
-                    {showAllInternships ? 'Show My Department' : 'Show All'}
+                    {showAllInternships ? 'Show My Dept' : 'Show All'}
                   </button>
                 </div>
                 {showAllInternships && (
@@ -302,17 +303,59 @@ function Home() {
                 )}
               </div>
             )}
+            
+            {/* Expired Internships Toggle - Only show when viewing all internships */}
+            {showAllInternships && (
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">
+                    {showExpiredInternships ? 'Including Expired' : 'Active Only'}
+                  </span>
+                  <button
+                    onClick={() => setShowExpiredInternships(!showExpiredInternships)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors w-32 ${
+                      showExpiredInternships 
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200' 
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    }`}
+                  >
+                    {showExpiredInternships ? 'Hide Expired' : 'Show Expired'}
+                  </button>
+                </div>
+                {showExpiredInternships && (
+                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+                    <p className="text-sm text-orange-800">
+                      <strong>Note:</strong> Expired internships are shown for reference only. You cannot apply to internships past their deadline.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
           
           
         </div>
       <div className="max-w-7xl   bg-white">
       <p className="text-text text-[20px] px-8">
-            {showAllInternships 
-              ? `All Internships (${filteredInternships.length} Found)`
-              : userDepartment 
-                ? `${userDepartment} Internships (${filteredInternships.length} Found)`
-                : `Internships (${filteredInternships.length} Found)`}
+            {(() => {
+              const activeCount = filteredInternships.filter(internship => {
+                if (!internship.firstRoundDate) return true;
+                return new Date(internship.firstRoundDate) >= new Date();
+              }).length;
+              const expiredCount = filteredInternships.length - activeCount;
+              
+              let baseText = showAllInternships 
+                ? 'All Internships'
+                : userDepartment 
+                  ? `${userDepartment} Internships`
+                  : 'Internships';
+              
+              if (showExpiredInternships && expiredCount > 0) {
+                return `${baseText} (${activeCount} Active, ${expiredCount} Expired)`;
+              } else {
+                return `${baseText} (${filteredInternships.length} Found)`;
+              }
+            })()}
           </p>
         {/* Error Message */}
         {error && (

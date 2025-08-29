@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc, orderBy, limit, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../../firebase/config';
 import { useAuth } from '../../context/AuthContext';
-import { Bell, User, ClipboardList, ChevronRight, Trash2, GripVertical, Filter, CheckCircle, Award, XCircle, FileText, Clock, HelpCircle } from 'lucide-react';
+import { Bell, User, ClipboardList, ChevronRight, Trash2, GripVertical, Filter, CheckCircle, Award, XCircle, FileText, Clock, HelpCircle, AlertCircle } from 'lucide-react';
+import { checkProfileCompletion, generateProfileNotificationMessage } from '../../utils/profileUtils';
 
 function Dashboard() {
   const { currentUser } = useAuth();
@@ -13,6 +14,7 @@ function Dashboard() {
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [removedApplications, setRemovedApplications] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [profileNotification, setProfileNotification] = useState(null);
   const [recommendedCourses, setRecommendedCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -137,7 +139,23 @@ function Dashboard() {
         try {
           const studentDoc = await getDoc(doc(db, 'students', currentUser.uid));
           if (studentDoc.exists()) {
-            setStudentData(studentDoc.data());
+            const data = studentDoc.data();
+            setStudentData(data);
+            
+            // Check profile completion and add notification if needed
+            const { isComplete, missingFields } = checkProfileCompletion(data);
+            if (!isComplete) {
+              const message = generateProfileNotificationMessage(missingFields);
+              setProfileNotification({
+                id: 'profile-incomplete',
+                type: 'profile',
+                message,
+                createdAt: new Date(),
+                priority: 'high'
+              });
+            } else {
+              setProfileNotification(null);
+            }
           }
         } catch (err) {
           console.error('Error fetching student data:', err);
@@ -765,17 +783,46 @@ function Dashboard() {
               <Bell size={20} />
             </div>
             <div className="space-y-4">
-              {notifications.length === 0 ? (
+              {!profileNotification && notifications.length === 0 ? (
                 <p className="text-gray-500">No notifications yet.</p>
               ) : (
-                notifications.map((notification) => (
-                  <div key={notification.id} className="border-b pb-4 last:border-b-0 last:pb-0">
-                    <p>{notification.message}</p>
-                    <span className="text-sm text-gray-500">
-                      {notification.createdAt?.toDate().toLocaleDateString('en-GB')}
-                    </span>
-                  </div>
-                ))
+                <>
+                  {/* Profile completion notification */}
+                  {profileNotification && (
+                    <div className="border-b pb-4 bg-orange-50 p-3 rounded-lg border border-orange-200">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle size={16} className="text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm text-gray-900">{profileNotification.message}</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <Link
+                              to="/student/profile"
+                              className="text-xs text-primary hover:text-primary-dark font-medium"
+                            >
+                              Complete Profile →
+                            </Link>
+                            <button
+                              onClick={() => setProfileNotification(null)}
+                              className="text-xs text-gray-500 hover:text-gray-700"
+                            >
+                              Dismiss
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Regular notifications */}
+                  {notifications.map((notification) => (
+                    <div key={notification.id} className="border-b pb-4 last:border-b-0 last:pb-0">
+                      <p>{notification.message}</p>
+                      <span className="text-sm text-gray-500">
+                        {notification.createdAt?.toDate().toLocaleDateString('en-GB')}
+                      </span>
+                    </div>
+                  ))}
+                </>
               )}
             </div>
           </div>

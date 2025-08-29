@@ -33,6 +33,9 @@ const InternshipCard = ({ internship, canApply = true, showAllMode = false }) =>
 
   const safeDomains = Array.isArray(domains) ? domains : [];
 
+  // Check if internship is expired
+  const isExpired = firstRoundDate ? new Date(firstRoundDate) < new Date() : false;
+
   const { currentUser, getUserData, userRole } = useAuth();
 
   return (
@@ -73,12 +76,12 @@ const InternshipCard = ({ internship, canApply = true, showAllMode = false }) =>
         )}
 
         <div className='flex flex-row items-center justify-between gap-2 mt-auto'>
-          <div className="bg-red-100 border border-red-300 rounded-lg p-2 flex-1">
-            <div className="flex flex-col text-red-800">
+          <div className={`${isExpired ? 'bg-gray-100 border border-gray-300' : 'bg-red-100 border border-red-300'} rounded-lg p-2 flex-1`}>
+            <div className={`flex flex-col ${isExpired ? 'text-gray-600' : 'text-red-800'}`}>
               <div className="flex items-center mb-1">
                 <FaCalendarAlt className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
                 <span className="text-xs sm:text-sm font-medium">
-                  Deadline: {new Date(firstRoundDate).toLocaleDateString('en-GB')}
+                  {isExpired ? 'Expired:' : 'Deadline:'} {new Date(firstRoundDate).toLocaleDateString('en-GB')}
                 </span>
               </div>
               <div className="flex items-center ml-4 sm:ml-5">
@@ -90,6 +93,11 @@ const InternshipCard = ({ internship, canApply = true, showAllMode = false }) =>
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
+            {isExpired && (
+              <span className="text-xs text-gray-600 font-medium">
+                Expired
+              </span>
+            )}
             {showAllMode && !canApply && (
               <span className="text-xs text-red-600 font-medium">
                 Department mismatch
@@ -98,7 +106,7 @@ const InternshipCard = ({ internship, canApply = true, showAllMode = false }) =>
             <Link
               to={`/internships/${id}`}
               className={`btn-sm ${
-                canApply ? 'btn-info' : 'btn-secondary opacity-75'
+                canApply && !isExpired ? 'btn-info' : 'btn-secondary opacity-75'
               }`}
             >
               View Details

@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import LogoPrimary from '../../assets/LogoPrimary.png';
-import { Bell, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
+import NotificationDropdown from '../NotificationDropdown';
 
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -111,9 +112,7 @@ function Navbar() {
           {currentUser && !isAuthPage && (
             <div className="hidden md:flex items-center justify-end gap-5">
               {/* Notification Bell */}
-              <button className="text-subtext hover:text-primary transition-colors p-2 rounded-lg hover:bg-gray-50">
-                <Bell size={20} />
-              </button>
+              <NotificationDropdown />
 
               {/* User Profile */}
               <div className="flex items-center gap-3">
